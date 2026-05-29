@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>checkers — tutorial</title>
+<style>
+@font-face { font-family: vogue; src: url(Vogue\ 3.ttf); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #faf7f0;
+    color: #1b1014;
+    font-family: Georgia, serif;
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* ── header ── */
+h1 {
+    font-family: vogue, Georgia, serif;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    letter-spacing: 6px;
+    text-transform: lowercase;
+    color: #1b1014;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 56px;
+}
+
+/* ── section ── */
+.section {
+    margin-bottom: 64px;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: fadeUp 0.5s ease forwards;
+}
+.section:nth-child(2) { animation-delay: 0.05s; }
+.section:nth-child(3) { animation-delay: 0.12s; }
+.section:nth-child(4) { animation-delay: 0.19s; }
+.section:nth-child(5) { animation-delay: 0.26s; }
+
+@keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-label {
+    font-family: vogue, Georgia, serif;
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    text-transform: lowercase;
+    color: #cd0f0f;
+    margin-bottom: 10px;
+}
+
+.section-title {
+    font-family: vogue, Georgia, serif;
+    font-size: 1.55rem;
+    letter-spacing: 3px;
+    text-transform: lowercase;
+    color: #1b1014;
+    margin-bottom: 16px;
+    line-height: 1.3;
+}
+
+.section-body {
+    font-size: 0.92rem;
+    line-height: 1.85;
+    color: #3a2a2e;
+    margin-bottom: 28px;
+}
+
+.section-body strong {
+    color: #1b1014;
+    font-weight: bold;
+}
+
+/* ── mini board ── */
+.board-wrap {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 8px;
+}
+
+.mini-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 280px;
+    height: 280px;
+    border: 3px solid rgba(0,0,0,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.sq {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.sq.light { background: #e0cbac; }
+.sq.dark  { background: #1b1014; }
+
+.pawn {
+    width: 62%;
+    height: 62%;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+}
+.pawn.p1 { background: #cd0f0f; }
+.pawn.opp { background: #faf7f0; }
+.pawn.king::after {
+    content: '♛';
+    position: absolute;
+    font-size: 0.6em;
+    color: gold;
+    text-shadow: 0 0 4px rgba(0,0,0,0.6);
+    pointer-events: none;
+}
+
+/* highlight dot for valid moves */
+.hint-dot {
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    border: 2px solid rgba(255,255,255,0.5);
+}
+
+/* arrow overlay */
+.arrow-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+
+/* selected piece glow */
+.pawn.selected {
+    filter: drop-shadow(0 0 6px white);
+    box-shadow: 0 0 12px 4px rgba(255,255,255,0.65);
+    transform: scale(1.15);
+}
+
+/* capture X */
+.capture-x {
+    position: absolute;
+    font-size: 0.55em;
+    color: rgba(255,80,80,0.85);
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ── caption ── */
+.caption {
+    font-size: 0.72rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #888;
+    margin-top: 10px;
+}
+
+/* ── back link ── */
+.back-link {
+    display: inline-block;
+    margin-top: 40px;
+    font-family: vogue, Georgia, serif;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: lowercase;
+    color: #1b1014;
+    text-decoration: none;
+    border-bottom: 1px solid #e0cbac;
+    padding-bottom: 2px;
+    transition: border-color 0.2s, color 0.2s;
+}
+.back-link:hover { color: #cd0f0f; border-color: #cd0f0f; }
+
+</style>
+</head>
+<body>
+
+<h1>how to play</h1>
+
+<!-- ── 1. The Board ── -->
+<div class="section">
+    <div class="section-label">1</div>
+    <div class="section-title">the board</div>
+    <div class="section-body">
+        The board is 8×8. Pieces only ever live on the <strong>dark squares</strong> and the light squares are decoration.
+        You play as <strong>red</strong> or <strong>white</strong>.
+        Each side starts with 12 pieces filling the first three rows of dark squares.
+    </div>
+    <div class="board-wrap">
+        <div class="mini-board" id="board-setup"></div>
+    </div>
+    <div class="caption">starting position</div>
+</div>
+
+<!-- ── 2. Basic Movement ── -->
+<div class="section">
+    <div class="section-label">2</div>
+    <div class="section-title">basic movement</div>
+    <div class="section-body">
+        On your turn, click a piece to select it. Then click a dark square diagonally in front of it to move.
+        Regular pieces can only move forward (toward the opponent's side).
+    </div>
+    <div class="board-wrap">
+        <div class="mini-board" id="board-move"></div>
+    </div>
+    <div class="caption">selected red piece —> dots show valid moves</div>
+</div>
+
+<!-- ── 3. Jumping & Capturing ── -->
+<div class="section">
+    <div class="section-label">3</div>
+    <div class="section-title">jumping & capturing</div>
+    <div class="section-body">
+        If an opponent's piece is diagonally adjacent and the square beyond it is empty, you must jump over it and captured it (removed from the board).
+        <br><br>
+        <strong>Captures are mandatory.</strong> If you can jump, you have to. You can't ignore a capture to make a regular move.
+        <br><br>x
+        If you can jump consecutively, you must do it. 
+    </div>
+    <div class="board-wrap">
+        <div class="mini-board" id="board-jump"></div>
+    </div>
+    <div class="caption">red can jump white —> white piece will be captured</div>
+</div>
+
+<!-- ── 4. Kings ── -->
+<div class="section">
+    <div class="section-label">4</div>
+    <div class="section-title">king pieces</div>
+    <div class="section-body">
+        When your piece reaches the far end of the board, it becomes a king and is marked with a crown ♛.
+        Kings can move and jump in all four diagonal directions, making them much more powerful.
+    </div>
+    <div class="board-wrap">
+        <div class="mini-board" id="board-king"></div>
+    </div>
+    <div class="caption">a king —> can move forward and backward</div>
+</div>
+
+<!-- ── 5. Winning ── -->
+<div class="section">
+    <div class="section-label">5</div>
+    <div class="section-title">winning the game</div>
+    <div class="section-body">
+        You win by either capturing all of your opponent's pieces, or leaving them with no legal moves.
+    </div>
+</div>
+
+<a class="back-link" href="checkers.html">← back to game</a>
+
+<script>
+    const SZ = 8;
+
+    function sq(r, c, content='') {
+        const d = document.createElement('div');
+        d.className = 'sq ' + ((r+c)%2===0 ? 'light' : 'dark');
+        d.dataset.r = r; d.dataset.c = c;
+        if (content) d.innerHTML = content;
+        return d;
+    }
+
+    function pawnHTML(type, extra='') {
+        return `<div class="pawn ${type} ${extra}"></div>`;
+    }
+
+    function hintHTML() {
+        return `<div class="hint-dot"></div>`;
+    }
+
+    function buildEmpty(id) {
+        const el = document.getElementById(id);
+        for (let r=0;r<8;r++) for(let c=0;c<8;c++) el.appendChild(sq(r,c));
+        return el;
+    }
+
+    function getCell(board, r, c) {
+        return board.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+    }
+
+    /* ── Board 1: setup ── */
+    (() => {
+        const b = buildEmpty('board-setup');
+        for (let r=0;r<3;r++) for(let c=0;c<8;c++)
+            if ((r+c)%2!==0) getCell(b,r,c).innerHTML = pawnHTML('opp');
+        for (let r=5;r<8;r++) for(let c=0;c<8;c++)
+            if ((r+c)%2!==0) getCell(b,r,c).innerHTML = pawnHTML('p1');
+    })();
+
+    /* ── Board 2: basic movement ── */
+    (() => {
+        const b = buildEmpty('board-move');
+        // sparse board — one selected red piece, hint dots
+        getCell(b,5,2).innerHTML = pawnHTML('p1','selected');
+        getCell(b,4,1).innerHTML = hintHTML();
+        getCell(b,4,3).innerHTML = hintHTML();
+        // a few opponent pieces for context
+        getCell(b,1,2).innerHTML = pawnHTML('opp');
+        getCell(b,1,4).innerHTML = pawnHTML('opp');
+        getCell(b,2,3).innerHTML = pawnHTML('opp');
+        // a couple more red pieces
+        getCell(b,6,3).innerHTML = pawnHTML('p1');
+        getCell(b,7,2).innerHTML = pawnHTML('p1');
+    })();
+
+    /* ── Board 3: jump ── */
+    (() => {
+        const b = buildEmpty('board-jump');
+        getCell(b,5,2).innerHTML = pawnHTML('p1','selected');
+        // white piece to jump
+        getCell(b,4,3).innerHTML = pawnHTML('opp') + `<span class="capture-x" style="top:4px;right:4px">✕</span>`;
+        // landing square
+        getCell(b,3,4).innerHTML = hintHTML();
+        // extra pieces for context
+        getCell(b,1,2).innerHTML = pawnHTML('opp');
+        getCell(b,2,5).innerHTML = pawnHTML('opp');
+        getCell(b,6,5).innerHTML = pawnHTML('p1');
+        getCell(b,7,4).innerHTML = pawnHTML('p1');
+    })();
+
+    /* ── Board 4: king ── */
+    (() => {
+        const b = buildEmpty('board-king');
+        // king in the middle
+        getCell(b,3,4).innerHTML = pawnHTML('p1','king selected');
+        // 4 directional hints
+        getCell(b,2,3).innerHTML = hintHTML();
+        getCell(b,2,5).innerHTML = hintHTML();
+        getCell(b,4,3).innerHTML = hintHTML();
+        getCell(b,4,5).innerHTML = hintHTML();
+        // context pieces
+        getCell(b,1,2).innerHTML = pawnHTML('opp');
+        getCell(b,0,5).innerHTML = pawnHTML('opp');
+        getCell(b,6,3).innerHTML = pawnHTML('p1');
+        getCell(b,7,6).innerHTML = pawnHTML('p1');
+    })();
+</script>
+</body>
+</html>

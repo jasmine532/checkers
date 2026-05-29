@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>checkers</title>
+    <link rel="icon" type="image/png" href="icon.png">
+</head>
+
+<style>
+    :root {
+        --bg:        #faf7f0;
+        --dark:      #1b1014;
+        --accent:    #960c1d;
+        --bd-dark:   #1b1014;
+        --bd-light:  #e0cbac;
+        --pc-dark:   #cd0f0f;
+        --pc-light:  #faf7f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; 
+        padding: 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        background-color: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        color: var(--dark);
+        overflow: hidden;
+        transition: background-color 0.4s ease;
+    }
+
+    .theme-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: 2px solid var(--dark);
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        font-size: 0.75rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--dark);
+        cursor: pointer;
+        z-index: 100;
+        transition: background 0.2s, color 0.2s;
+    }
+   
+    .theme-btn:hover { background: var(--dark); 
+    color: var(--bg); 
+    }
+
+    .theme-menu {
+        position: fixed;
+        top: 62px; 
+        right: 20px;
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid #ffffff;
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 99;
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s;
+        min-width: 360px;
+    }
+
+    .theme-menu.open { opacity: 1; 
+    transform: translateY(0); 
+    pointer-events: all; 
+    }
+
+    .theme-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 10px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: background 0.15s;
+        border: 2px solid transparent;
+    }
+
+    .theme-row:hover { background: #f5f5f5; 
+    }
+
+    .theme-row.active { border-color: #aaa; 
+    }
+
+    .theme-row-name {
+        font-size: 0.8rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        flex: 1;
+    }
+
+    .theme-chips { display: flex; 
+    gap: 4px; 
+    }
+
+    .chip {
+        width: 16px; 
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.15);
+        flex-shrink: 0;
+    }
+
+    h1 {
+        font-size: 3rem;
+        margin: 0 0 2.5rem 0;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        color: var(--dark);
+        flex-shrink: 0;
+        transition: color 0.4s;
+    }
+
+    .stage {
+        display: flex;
+        align-items: flex-start;
+        gap: 40px;
+        transition: transform 0.45s cubic-bezier(0.77, 0, 0.18, 1);
+        transform: translateX(160px);
+    }
+    
+    .stage.shifted { transform: translateX(0);  }
+
+    .left-col { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: stretch; 
+    }
+    
+    .button-group { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+    }
+
+    .btn {
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        padding: 15px 25px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        width: 150px;
+        text-align: center;
+    }
+
+    .btn:hover { 
+    filter: brightness(0.95); 
+    transform: translateY(-2px); 
+    }
+    
+    .btn:active { 
+    transform: translateY(2px); 
+    }
+    
+    .btn.active { 
+    filter: brightness(0.85); 
+    outline: 3px solid var(--accent); 
+    outline-offset: 3px; 
+    }
+
+    .btn-tutorial {
+        margin-top: 10px;
+        transform: scale(85%);
+        filter: opacity(0.7);
+    }
+    
+
+    .options-panel {
+        width: 280px;
+        opacity: 0;
+        transform: translateX(20px);
+        pointer-events: none;
+        transition: opacity 0.35s ease 0.15s, transform 0.4s cubic-bezier(0.77, 0, 0.18, 1) 0.1s;
+        flex-shrink: 0;
+    }
+    
+
+    .options-panel.visible { 
+    opacity: 1; 
+    transform: translateX(0); 
+    pointer-events: all; 
+    }
+
+
+    .panel-inner {
+        background: white;
+        border-radius: 12px;
+        padding: 28px 24px;
+        border: 1px solid #e8e0d5;
+    }
+    
+
+    .panel-title { 
+    font-size: 0.7rem; 
+    font-weight: bold; 
+    letter-spacing: 3px; 
+    color: #999; 
+    margin: 0 0 6px 0; 
+    }
+    
+
+    .mode-label  { 
+    font-size: 1.25rem; 
+    font-weight: bold; 
+    color: #1a1a1a; 
+    margin: 0 0 22px 0; 
+    }
+    
+
+    .color-section { 
+    margin-bottom: 18px; 
+    }
+    
+    .color-section-label { 
+    font-size: 0.75rem; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+    color: #666; 
+    margin-bottom: 10px; 
+    }
+    
+
+    .color-swatches { 
+    display: flex; 
+    gap: 10px; 
+    flex-wrap: wrap; 
+    }
+    
+
+    .swatch {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid transparent;
+        transition: transform 0.15s, border-color 0.15s;
+        outline: none;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+    }
+    
+    .swatch:hover { 
+    transform: scale(1.15); 
+    }
+    
+    .swatch.selected { 
+    border-color: #1a1a1a; 
+    transform: scale(1.1); 
+    }
+    
+
+    .conflict-msg { 
+    font-size: 0.78rem; 
+    color: #c0392b; 
+    margin-top: 8px; 
+    min-height: 1.1em; 
+    opacity: 0; 
+    transition: opacity 0.2s; 
+    }
+    
+    .conflict-msg.show { 
+    opacity: 1; 
+    }
+    
+
+    .divider { 
+    height: 1px; 
+    background: #e8e0d5; 
+    margin: 18px 0; 
+    }
+    
+
+    .btn-start {
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        padding: 14px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+        transition: filter 0.2s, transform 0.1s, box-shadow 0.1s;
+    }
+    
+    .btn-start:hover { 
+    filter: brightness(0.85); 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 0 rgba(0,0,0,0.25); 
+    }
+    
+    .btn-start:active { 
+    transform: translateY(2px); 
+    box-shadow: 0 0 0 rgba(0,0,0,0.25); 
+    }
+    
+</style>
+
+<body>
+
+    <button class="theme-btn" onclick="toggleThemeMenu()">&#9681;</button>
+    <div class="theme-menu" id="themeMenu"></div>
+
+    <h1>CHECKERS</h1>
+
+    <div class="stage" id="stage">
+        <div class="left-col">
+            <div class="button-group">
+                <button class="btn" onclick="selectMode(this, '1-player')">1 player</button>
+                <button class="btn" onclick="selectMode(this, '2-player')">2 player</button>
+                <button class="btn btn-tutorial" onclick="selectMode(this, 'tutorial')">tutorial</button>
+            </div>
+        </div>
+
+        <div class="options-panel" id="optionsPanel">
+            <div class="panel-inner">
+                <p class="mode-label" id="modeLabel">—</p>
+
+                <div class="color-section">
+                    <div class="color-section-label" id="p1Label">Player Color</div>
+                    <div class="color-swatches" id="p1Swatches"></div>
+                </div>
+
+                <div class="color-section" id="p2Section">
+                    <div class="color-section-label">Player 2 Color</div>
+                    <div class="color-swatches" id="p2Swatches"></div>
+                </div>
+
+                <div class="conflict-msg" id="conflictMsg">players must choose different colors.</div>
+                <button class="btn-start" onclick="startGame()">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const THEMES = [
+        {
+            key: 'option1',
+            name: 'boring basic bland',
+            bg: '#faf7f0', dark: '#1b1014', accent: '#960c1d',
+            bdDark: '#1b1014', bdLight: '#e0cbac',
+            pcDark: '#cd0f0f', pcLight: '#faf7f0',
+            glow: '255,255,255',
+        },
+        {
+            key: 'option2',
+            name: 'sparkly unicorn dookie',
+            bg: '#ffe5d9', dark: '#5a2d3a', accent: '#c9748a',
+            bdDark: '#f5acb7', bdLight: '#ffcad4',
+            pcDark: '#d8e2de', pcLight: '#ffe5d9',
+            glow: '255,255,255',
+        },
+        {
+            key: 'option3',
+            name: 'moldy strawberry icecream',
+            bg: '#ffeff1', dark: '#2e1a1d', accent: '#472027',
+            bdDark: '#707649', bdLight: '#edb6ae',
+            pcDark: '#472027', pcLight: '#ffe7e3',
+            glow: '255,255,255',
+        },
+        {
+            key: 'option4',
+            name: 'expired campbell soup',
+            bg: '#472026', dark: '#dbc6c1', accent: '#7a3030',
+            bdDark: '#960c1d', bdLight: '#dbc6c1',
+            pcDark: '#472026', pcLight: '#fffaf5',
+            glow: '255,255,255',
+        },
+        {
+            key: 'option5',
+            name: 'beachy sardine cans',
+            bg: '#2d3142', dark: '#f0f4f8', accent: '#e0673b',
+            bdDark: '#4f5d75', bdLight: '#d8e2de',
+            pcDark: '#e0673b', pcLight: '#84aad2',
+            glow: '255,255,255',
+        },
+        {
+            key: 'option6',
+            name: 'strawberry goose turds',
+            bg: '#583e23', dark: '#f5efe6', accent: '#c4979e',
+            bdDark: '#472027', bdLight: '#73693b',
+            pcDark: '#c4979e', pcLight: '#b9a86c',
+            glow: '255,255,255',
+        },
+    ];
+
+    let activeThemeIdx = 0;
+    let themeMenuOpen  = false;
+    let currentMode    = null;
+    let p1ColorIdx     = 0;
+    let p2ColorIdx     = 1;
+
+    function getThemeColors(t) {
+        return [
+            { name: 'light', hex: t.pcLight },
+            { name: 'dark',  hex: t.pcDark  },
+        ];
+    }
+
+    function applyTheme(idx, save) {
+        const t = THEMES[idx];
+        const s = document.documentElement.style;
+        s.setProperty('--bg',       t.bg);
+        s.setProperty('--dark',     t.dark);
+        s.setProperty('--accent',   t.accent);
+        s.setProperty('--bd-dark',  t.bdDark);
+        s.setProperty('--bd-light', t.bdLight);
+        s.setProperty('--pc-dark',  t.pcDark);
+        s.setProperty('--pc-light', t.pcLight);
+        activeThemeIdx = idx;
+        p1ColorIdx = 0;
+        p2ColorIdx = 1;
+        if (save !== false) localStorage.setItem('checkersTheme', idx);
+        refreshSwatches();
+        document.querySelectorAll('.theme-row').forEach((r, i) => r.classList.toggle('active', i === idx));
+    }
+
+    function buildThemeMenu() {
+        const menu = document.getElementById('themeMenu');
+        menu.innerHTML = '';
+        THEMES.forEach((t, i) => {
+            const row = document.createElement('div');
+            row.className = 'theme-row' + (i === activeThemeIdx ? ' active' : '');
+            row.onclick = () => { applyTheme(i); closeThemeMenu(); };
+            const name = document.createElement('span');
+            name.className = 'theme-row-name';
+            name.textContent = t.name;
+            const chips = document.createElement('div');
+            chips.className = 'theme-chips';
+            [t.bdDark, t.bdLight, t.pcDark, t.pcLight, t.bg].forEach(hex => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.style.backgroundColor = hex;
+                chips.appendChild(chip);
+            });
+            row.appendChild(name);
+            row.appendChild(chips);
+            menu.appendChild(row);
+        });
+    }
+
+    function toggleThemeMenu() {
+        themeMenuOpen = !themeMenuOpen;
+        document.getElementById('themeMenu').classList.toggle('open', themeMenuOpen);
+    }
+
+    function closeThemeMenu() {
+        themeMenuOpen = false;
+        document.getElementById('themeMenu').classList.remove('open');
+    }
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.theme-btn') && !e.target.closest('.theme-menu')) closeThemeMenu();
+    });
+
+    function buildSwatches(containerId, selectedIdx, onSelect) {
+        const colors = getThemeColors(THEMES[activeThemeIdx]);
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        colors.forEach((c, i) => {
+            const s = document.createElement('button');
+            s.className = 'swatch' + (i === selectedIdx ? ' selected' : '');
+            s.style.backgroundColor = c.hex;
+            s.title = c.name;
+            s.onclick = () => { onSelect(i); hideConflict(); };
+            container.appendChild(s);
+        });
+    }
+
+    function refreshSwatches() {
+        buildSwatches('p1Swatches', p1ColorIdx, i => { p1ColorIdx = i; refreshSwatches(); });
+        buildSwatches('p2Swatches', p2ColorIdx, i => { p2ColorIdx = i; refreshSwatches(); });
+    }
+
+    function showConflict() { document.getElementById('conflictMsg').classList.add('show'); }
+    function hideConflict() { document.getElementById('conflictMsg').classList.remove('show'); }
+
+    function selectMode(btn, mode) {
+        currentMode = mode;
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const labels = { '1-player': '1 player', '2-player': '2 player', 'tutorial': 'tutorial' };
+        document.getElementById('modeLabel').textContent = labels[mode];
+        const p2Section = document.getElementById('p2Section');
+        const p1Label   = document.getElementById('p1Label');
+        if (mode === '2-player') {
+            p2Section.style.display = 'block';
+            p1Label.textContent = 'Player 1 Color';
+        } else {
+            p2Section.style.display = 'none';
+            p1Label.textContent = 'Player Color';
+        }
+        hideConflict();
+        refreshSwatches();
+        document.getElementById('stage').classList.add('shifted');
+        document.getElementById('optionsPanel').classList.add('visible');
+    }
+
+    function startGame() {
+        if (currentMode === '2-player' && p1ColorIdx === p2ColorIdx) {
+            showConflict();
+            return;
+        }
+        const t = THEMES[activeThemeIdx];
+        const colors = getThemeColors(t);
+        // In 1-player mode, the AI always gets the opposite color to the player
+        const effectiveP2ColorIdx = currentMode === '1-player'
+            ? (p1ColorIdx === 0 ? 1 : 0)
+            : p2ColorIdx;
+        localStorage.setItem('checkersTheme', activeThemeIdx);
+        localStorage.setItem('checkersThemeKey', t.key);
+        localStorage.setItem('checkersP1Color', colors[p1ColorIdx].hex);
+        localStorage.setItem('checkersP2Color', colors[effectiveP2ColorIdx].hex);
+        localStorage.setItem('checkersP1ColorIdx', p1ColorIdx);
+        localStorage.setItem('checkersP2ColorIdx', effectiveP2ColorIdx);
+        window.location.href = currentMode + '.html';
+    }
+
+    buildThemeMenu();
+    const savedTheme = localStorage.getItem('checkersTheme');
+    applyTheme(savedTheme !== null ? parseInt(savedTheme) : 0, false);
+</script>
+
+</body>
+</html>
